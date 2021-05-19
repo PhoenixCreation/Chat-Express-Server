@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "the test repo fro supabase functionality.",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -14,6 +15,7 @@
   "author": "PhoenixCreation",
   "license": "MIT",
   "dependencies": {
+    "@supabase/supabase-js": "^1.11.14",
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",
     "dotenv": "^9.0.2",
