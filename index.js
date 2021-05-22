@@ -7,6 +7,8 @@ import { createServer } from "http";
 import * as socket_pkg from "socket.io";
 const { Server } = socket_pkg;
 
+import supabase from "./supabase.js";
+
 import ApiRouter from "./routes/Api.js";
 
 const app = express();
@@ -29,11 +31,24 @@ io.on("connection", (socket) => {
     console.log("Back end connect");
     console.log(...args);
   });
-  socket.on("message", (...args) => {
-    console.log("Back end message recieved");
-    console.log(socket.id);
-    socket.emit("message_re", ...args);
-    console.log(...args);
+  socket.on("start_listning_for", (username) => {
+    console.log(username);
+    (async () => {
+      // TODO: retrive user info first, then send the initial chats first and also subscribe to the all tables
+      const { data, error } = await supabase
+        .from(`${username}_to_${username}`)
+        .select("*");
+      console.log("messages recieved from supabase");
+      socket.emit(username, data);
+
+      supabase
+        .from(`${username}_to_${username}`)
+        .on("*", (payload) => {
+          console.log("message recieved from supabase");
+          socket.emit(username, payload);
+        })
+        .subscribe();
+    })();
   });
   socket.on("disconnecting", (...args) => {
     console.log("Back end dis connect ing");

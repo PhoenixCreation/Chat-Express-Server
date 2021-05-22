@@ -85,6 +85,8 @@ AuthApiRouter.post("/signup", async (req, res) => {
       deleted_status varchar
     )`);
 
+    // TODO: transfer this table to supbase realtime update from .notes
+
     user.chats.push(
       `${user.username.toLowerCase()}_to_${user.username.toLowerCase()}`
     );
