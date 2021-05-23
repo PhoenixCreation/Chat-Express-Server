@@ -25,10 +25,11 @@ io.on("connection", (socket) => {
   io.allSockets().then((payload) => console.log(payload));
   console.log(`new connection with id: ${socket.id}`);
   let unsubs = [];
+  let userOfThisSocket = {};
 
   socket.on("user-connect", (user) => {
     console.log(user.username + " is starting connection");
-    // TODO: retrive user info first, then send the initial chats first and also subscribe to the all tables
+    // TODO: send the initial chats first and also subscribe to the all tables
     (async () => {
       const { data: userData, error } = await supabase
         .from("userinfo")
@@ -36,6 +37,7 @@ io.on("connection", (socket) => {
         .eq("username", user.username);
       if (!error) {
         if (userData.length === 1) {
+          userOfThisSocket = userData[0];
           for (let i = 0; i < userData[0].chats.length; i++) {
             const chat_table = userData[0].chats[i];
             const unsubscribe = supabase
@@ -55,15 +57,14 @@ io.on("connection", (socket) => {
   socket.on("disconnecting", (...args) => {
     console.log("Back end dis connect ing");
     console.log(`Disconnecting with id: ${socket.id}`);
+    if (userOfThisSocket.username) {
+      console.log(userOfThisSocket.username + " is offline");
+    }
+    console.log("unsubscribing all events");
     for (let i = 0; i < unsubs.length; i++) {
       const unsubscriber = unsubs[i];
       unsubscriber.unsubscribe();
     }
-    console.log(...args);
-  });
-  socket.on("disconnect", (...args) => {
-    console.log("Back end dis connect");
-    console.log(`Disconnected with id: ${socket.id}`);
     console.log(...args);
   });
 });
