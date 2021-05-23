@@ -1,6 +1,9 @@
+import dotenv from "dotenv";
+dotenv.config();
 import express from "express";
 import supabase from "../../supabase.js";
 import client from "../../postgres.js";
+import CryptoJS from "crypto-js";
 
 const TABLE_NAME = "userinfo";
 
@@ -28,6 +31,13 @@ AuthApiRouter.post("/signup", async (req, res) => {
 
     // username should always be lower case because table names are case UN sensitive.
     user.username = user.username.toLowerCase();
+
+    // encrypt the password
+    const encryptedPassword = CryptoJS.AES.encrypt(
+      user.password,
+      process.env.ENCRYPTION_KEY
+    ).toString();
+    user.password = encryptedPassword;
 
     // retrive list of all usernames from supabase
     const { data: currentUsers, error: error1 } = await supabase
@@ -166,7 +176,11 @@ AuthApiRouter.post("/login", async (req, res) => {
     for (let i = 0; i < currentUsers.length; i++) {
       const currentUser = currentUsers[i];
       if (currentUser.username === user.username) {
-        if (currentUser.password === user.password) {
+        const password = CryptoJS.AES.decrypt(
+          currentUser.password,
+          process.env.ENCRYPTION_KEY
+        ).toString(CryptoJS.enc.Utf8);
+        if (password === user.password) {
           status = "available";
           returnUser = currentUser;
         } else {
@@ -195,7 +209,7 @@ AuthApiRouter.post("/login", async (req, res) => {
       console.log(user.username);
       res.json({
         error: "Wrong password",
-        message: "Wrong password provoded.",
+        message: "Wrong password provided.",
       });
       return;
     }
