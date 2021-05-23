@@ -85,7 +85,9 @@ AuthApiRouter.post("/signup", async (req, res) => {
       deleted_status varchar
     )`);
 
-    // TODO: transfer this table to supbase realtime update from .notes
+    const realtime_result = await client.query(
+      `alter publication supabase_realtime add table ${user.username}_to_${user.username};`
+    );
 
     user.chats.push(
       `${user.username.toLowerCase()}_to_${user.username.toLowerCase()}`
@@ -201,7 +203,7 @@ AuthApiRouter.post("/login", async (req, res) => {
     // Everything is okay. Good to go.
 
     // return user that is found
-    res.json({ message: "user found!", user: returnUser });
+    res.json({ message: "success", user: returnUser });
     return;
   } catch (error) {
     console.log("On Api call [POST] /api/auth/login => ");
