@@ -29,31 +29,8 @@ io.on("connection", (socket) => {
 
   socket.on("user-connect", (user) => {
     console.log(user.username + " is starting connection");
-    // TODO: send the initial chats first and also subscribe to the all tables
-    // (async () => {
-    //   const { data: userData, error } = await supabase
-    //     .from("userinfo")
-    //     .select("username,password, chats")
-    //     .eq("username", user.username);
-    //   if (!error) {
-    //     if (userData.length === 1) {
-    //       userOfThisSocket = userData[0];
-    //       // TODO: this needs to be change
-    //       // for (let i = 0; i < userData[0].chats.length; i++) {
-    //       //   const chat_table = userData[0].chats[i];
-    //       //   const unsubscribe = supabase
-    //       //     .from(chat_table)
-    //       //     .on("*", (payload) => {
-    //       //       console.log("Change received!", payload);
-    //       //     })
-    //       //     .subscribe();
-    //       //   unsubs.push(unsubscribe);
-    //       // }
-    //     } else {
-    //       console.log("no user?");
-    //     }
-    //   }
-    // })();
+    socket.join(user.username);
+    io.to(user.username).emit("test", "Sending from a group");
   });
   socket.on("disconnecting", (...args) => {
     console.log("Back end dis connect ing");
