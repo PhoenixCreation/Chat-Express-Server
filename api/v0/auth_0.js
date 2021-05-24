@@ -99,9 +99,8 @@ AuthApiRouter.post("/signup", async (req, res) => {
       `alter publication supabase_realtime add table ${user.username}_to_${user.username};`
     );
 
-    user.chats.push(
-      `${user.username.toLowerCase()}_to_${user.username.toLowerCase()}`
-    );
+    // TODO: this needs to be change
+    user.chats.push(`${user.username.toLowerCase()}`);
 
     // Insert user to databse by supabase
     const { data, error: error2 } = await supabase
