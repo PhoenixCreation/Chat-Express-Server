@@ -59,19 +59,41 @@ io.on("connection", (socket) => {
         return `${sorter[0]}_to_${sorter[1]}`;
       });
       // send the initial chat first....
-      chatTables.forEach((tableName) => {
+      const intialSending = {};
+      await asyncForEach(chatTables, async (tableName, i) => {
+        const { data: chatsWithUser, error } = await supabase
+          .from(tableName)
+          .select("*")
+          .order("timestamp", { ascending: false });
+        intialSending[chats[i]] = chatsWithUser;
+      });
+      io.to(user.username).emit(user.username, "INITIAL", "", intialSending);
+
+      chatTables.forEach((tableName, i) => {
         const unsubscriber = supabase
           .from(tableName)
           .on("UPDATE", (updatedChat) => {
-            console.log("Updated chat", updatedChat.new);
-            io.to(user.username).emit(user.username, "UPDATE", updatedChat.new);
+            io.to(user.username).emit(
+              user.username,
+              "UPDATE",
+              chats[i],
+              updatedChat.new
+            );
           })
           .on("INSERT", (insertedChat) => {
-            console.log("Inserted chat", insertedChat.new);
             io.to(user.username).emit(
               user.username,
               "INSERT",
+              chats[i],
               insertedChat.new
+            );
+          })
+          .on("DELETE", (deletedChat) => {
+            io.to(user.username).emit(
+              user.username,
+              "DELETE",
+              chats[i],
+              deletedChat.old
             );
           })
           .subscribe();
@@ -108,3 +130,9 @@ const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () =>
   console.log(`Server running on http://localhost:${PORT}`)
 );
+
+async function asyncForEach(array, callback) {
+  for (let index = 0; index < array.length; index++) {
+    await callback(array[index], index, array);
+  }
+}
