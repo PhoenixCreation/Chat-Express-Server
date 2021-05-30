@@ -71,7 +71,7 @@ io.on("connection", (socket) => {
       await asyncForEach(chats, async (chat, i) => {
         const { data: userData, error: error1 } = await supabase
           .from("userinfo")
-          .select("username,display_name,status,avatar_url")
+          .select("id,username,display_name,status,avatar_url")
           .eq("username", chat);
         chatUsers[chat] = userData[0];
       });
