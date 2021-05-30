@@ -67,7 +67,20 @@ io.on("connection", (socket) => {
           .order("timestamp", { ascending: false });
         intialSending[chats[i]] = chatsWithUser;
       });
-      io.to(user.username).emit(user.username, "INITIAL", "", intialSending);
+      const chatUsers = {};
+      await asyncForEach(chats, async (chat, i) => {
+        const { data: userData, error: error1 } = await supabase
+          .from("userinfo")
+          .select("username,display_name,status,avatar_url")
+          .eq("username", chat);
+        chatUsers[chat] = userData[0];
+      });
+      io.to(user.username).emit(
+        user.username,
+        "INITIAL",
+        chatUsers,
+        intialSending
+      );
 
       chatTables.forEach((tableName, i) => {
         const unsubscriber = supabase

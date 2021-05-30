@@ -29,6 +29,15 @@ AuthApiRouter.post("/signup", async (req, res) => {
       return;
     }
 
+    // check if there is space in username
+    if (user.username.indexOf(" ") >= 0) {
+      res.json({
+        error: "Username can't have space",
+        message: "Username can not contain space.",
+      });
+      return;
+    }
+
     // username should always be lower case because table names are case UN sensitive.
     user.username = user.username.toLowerCase();
 
@@ -80,6 +89,15 @@ AuthApiRouter.post("/signup", async (req, res) => {
     if (typeof user.public !== "boolean") user.public = false;
     if (!user.settings) user.settings = { theme: "light" };
     if (!user.chats) user.chats = [];
+    if (!user.groups) user.groups = [];
+    if (!user.status) user.status = "online";
+    if (!user.avatar_url)
+      user.avatar_url =
+        "https://ui-avatars.com/api/?background=random&name=" + user.username;
+    if (!user.extras)
+      user.extras = {
+        lastLogin: new Date().getTime(),
+      };
 
     // create a username_to_username tabel
     const result =
@@ -91,8 +109,7 @@ AuthApiRouter.post("/signup", async (req, res) => {
       content varchar,
       attachments json,
       timestamp bigint,
-      read_reciept varchar,
-      deleted_status varchar
+      metadata json
     )`);
 
     const realtime_result = await client.query(
@@ -122,7 +139,7 @@ AuthApiRouter.post("/signup", async (req, res) => {
       .status(200)
       .json({ message: "Successfully added the user.", user: data[0] });
   } catch (error) {
-    console.log("On Api call [POST] /api/auth/signup => ");
+    console.log("On Api call [POST] /api/auth/signup : uncught => ");
     console.log(error);
     res
       .status(200)

@@ -100,8 +100,7 @@ ChatApiRouter.post("/addchat", async (req, res) => {
       content varchar,
       attachments json,
       timestamp bigint,
-      read_reciept varchar,
-      deleted_status varchar
+      metadata json
     )`);
 
     const realtime_result = await client.query(
@@ -136,6 +135,105 @@ ChatApiRouter.post("/addchat", async (req, res) => {
     res.json({ message: "success!" });
   } catch (error) {
     console.log("On Api call [POST] /api/v0/chat/addchat =>");
+    console.log(error);
+    res.json({
+      error: JSON.stringify(error),
+      message: "Internal Server Error",
+    });
+  }
+});
+
+ChatApiRouter.post("/message/send", async (req, res) => {
+  try {
+    const { sender, message, reciever } = req.body;
+
+    if (!sender.id || !reciever.id) {
+      res.json({
+        error: "you need id of both users",
+        message: "You need to provide the ids of both user.",
+      });
+      return;
+    }
+
+    // check for requesting user first
+    const { data: userData, error: error1 } = await supabase
+      .from("userinfo")
+      .select("username,password,chats")
+      .eq("username", sender.username);
+    if (error1) {
+      console.log("On Api call [POST] /api/v0/chat/message/send =>");
+      console.log(error1);
+      res.json({ error: error1, message: "Supabase Server error" });
+      return;
+    }
+    if (userData.length !== 1) {
+      console.log("On Api call [POST] /api/v0/chat/message/send =>");
+      console.log("No user found?!");
+      res.json({
+        error: "No user found for your credentials",
+        message: "No user found. Make sure your have proper credentials.",
+      });
+      return;
+    }
+
+    // check for password
+    const user = userData[0];
+    if (user.password !== sender.password) {
+      console.log("On Api call [POST] /api/v0/chat/message/send =>");
+      console.log("Password from requestingUser is not encrypted");
+      res.json({
+        error: "Bad credentials",
+        message: "Unusual data provided. Password is not properly encrypted.",
+      });
+      return;
+    }
+
+    // check if chat exists or not
+    if (!user.chats.includes(reciever.username)) {
+      console.log("On Api call [POST] /api/v0/chat/message/send => ");
+      res.json({
+        error: "chat does not exists",
+        message: "chat with this user does not exists.",
+      });
+      return;
+    }
+
+    // create a proper message object
+    const sendingMessage = {
+      sender_id: sender.id,
+      reciever_id: reciever.id,
+      type: message.type || "text",
+      content: message.content || "",
+      attachments: message.attachments || [],
+      timestamp: message.timestamp || new Date().getTime(),
+      metadata: {
+        read: "sent",
+        deleted: "none",
+        forwarded: "none",
+      },
+    };
+
+    const sorter = [sender.username, reciever.username];
+    sorter.sort();
+    const chatTable = `${sorter[0]}_to_${sorter[1]}`;
+
+    // send to database
+    const { error: error2 } = await supabase
+      .from(chatTable)
+      .insert([sendingMessage]);
+
+    if (error2) {
+      console.log("On Api call [POST] /api/v0/chat/message/send =>");
+      console.log(error2);
+      res.json({ error: error2, message: "Supabase Server error" });
+      return;
+    }
+
+    // TODO: send notification to reciever
+
+    res.json({ message: "message sent" });
+  } catch (error) {
+    console.log("On Api call [POST] /api/v0/chat/message/send: uncaught =>");
     console.log(error);
     res.json({
       error: JSON.stringify(error),
