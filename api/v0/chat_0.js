@@ -1,9 +1,10 @@
 import dotenv from "dotenv";
 dotenv.config();
-import express from "express";
+import express, { response } from "express";
 import supabase from "../../supabase.js";
 import client from "../../postgres.js";
 import CryptoJS from "crypto-js";
+import axios from "axios";
 
 const ChatApiRouter = express.Router();
 
@@ -230,6 +231,23 @@ ChatApiRouter.post("/message/send", async (req, res) => {
     }
 
     // TODO: send notification to reciever
+    const { data: recieverData, error: error3 } = await supabase
+      .from("userinfo")
+      .select("notification_tokens")
+      .eq("username", reciever.username);
+    recieverData[0].notification_tokens.forEach(({ os, token }, i) => {
+      axios
+        .post("https://exp.host/--/api/v2/push/send", {
+          to: token,
+          sound: "default",
+          title: sender.username,
+          body: message.content,
+          data: { someData: "goes here" },
+        })
+        .then((response) => {
+          // console.log(response);
+        });
+    });
 
     res.json({ message: "message sent" });
   } catch (error) {
