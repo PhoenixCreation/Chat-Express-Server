@@ -267,4 +267,27 @@ AuthApiRouter.post("/getuser", async (req, res) => {
   }
 });
 
+AuthApiRouter.post("/retriveallusers", async (req, res) => {
+  try {
+    const { data: users, error: error1 } = await supabase
+      .from(TABLE_NAME)
+      .select("id,username,display_name,avatar_url, location")
+      .eq("public", true);
+    if (error1) {
+      console.log("On Api call [POST] /api/auth/retriveallusers =>");
+      console.log(error1);
+      res.json({ error: error1, message: "Supabase Server error" });
+      return;
+    }
+    res.json({ message: "success", users });
+  } catch (error) {
+    console.log("On Api call [POST] /api/auth/retriveallusers => ");
+    console.log(error);
+    res.json({
+      error: JSON.stringify(error),
+      message: "Internal Server Error",
+    });
+  }
+});
+
 export default AuthApiRouter;
